@@ -1,4 +1,4 @@
-# aura Photography reading web application
+# aura photography reading web application
 #
 # Last Modified: 29 Jan 2016
 Create 'master' aura details and use this to create PDF for client aura input
