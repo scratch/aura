@@ -42,6 +42,7 @@ class GF_Field_Repeater extends GF_Field {
 	public function get_form_editor_field_settings() {
 		return array(
 			'admin_label_setting',
+			'css_class_setting',
 			'description_setting',
 			'error_message_setting',
 			'label_setting',
@@ -157,7 +158,7 @@ class GF_Field_Repeater extends GF_Field {
 					if (!is_array($inputNames)) { continue; }
 
 					if (is_array($repeatSkips)) {
-						if (in_array($i, $repeatSkips)) { continue; }
+						if (in_array($i, $repeatSkips) || in_array('all', $repeatSkips)) { continue; }
 					}
 
 					foreach ($inputNames as $inputName) {
@@ -309,7 +310,7 @@ class GF_Field_Repeater extends GF_Field {
 					$repeatSkips = $field['conditionalLogic']['skip'];
 
 					if (is_array($repeatSkips)) {
-						if (in_array($i, $repeatSkips)) { continue; }
+						if (in_array($i, $repeatSkips) || in_array('all', $repeatSkips)) { continue; }
 					}
 					
 					if (is_array($inputNames)) {
@@ -474,6 +475,14 @@ class GF_Field_Repeater extends GF_Field {
 		return trim($output);
 	}
 
+	public function get_value_export($entry, $input_id = '', $use_text = false, $is_csv = false) {
+		if (empty($input_id)) { $input_id = $this->id; }
+		$output = rgar($entry, $input_id);
+		$output = GF_Field_Repeater::get_value_entry_detail($output, '', false, 'text', 'email');
+		$output = preg_replace("/[\r\n]+/", ", ", trim($output));
+		return $output;
+	}
+
 	public static function gform_hide_children($form) {
 		$form_id = $form['id'];
 		$repeaterChildren = Array();
@@ -509,7 +518,7 @@ class GF_Field_Repeater extends GF_Field {
 
 	public static function gform_disable_ajax($args) {
 		$get_form = GFFormsModel::get_form_meta_by_id($args['form_id']);
-		$form = $get_form[0];
+		$form = reset($get_form);
 
 		if (GF_Field_Repeater::get_field_index($form) !== false) {
 			$args['ajax'] = false;
@@ -553,9 +562,18 @@ class GF_Field_Repeater extends GF_Field {
 	}
 
 	public static function get_field_index($form, $key = 'type', $value = 'repeater') {
+		if (is_array($form)) {
+			if (!array_key_exists('fields', $form)) { return false; }
+		} else { return false; }
+
 		foreach ($form['fields'] as $field_key=>$field_value) {
-			if ($field_value[$key] == $value) { return $field_key; }
+			if (is_object($field_value)) {
+				if (property_exists($field_value, $key)) {
+					if ($field_value[$key] == $value) { return $field_key; }
+				}
+			}
 		}
+
 		return false;
 	}
 

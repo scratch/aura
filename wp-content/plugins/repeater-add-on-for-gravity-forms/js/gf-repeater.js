@@ -16,6 +16,7 @@ function gfRepeater_getRepeaters() {
 		var repeaterFound = 0;
 		var repeaterChildCount = 0;
 		var repeaterParemCount = 0;
+		var parentSection = null;
 		var repeaterInfo = {};
 		var repeaterChildren = {};
 		var repeaterChildrenInputData = {};
@@ -41,17 +42,17 @@ function gfRepeater_getRepeaters() {
 					repeaterInfo = jQuery(dataElement).val();
 					if (repeaterInfo) { repeaterInfo = JSON.parse(repeaterInfo); }
 
-					if (repeaterId == 1) {
-						if (jQuery.captures()) {
-							capturedData = jQuery.captures(dataElement.attr('name'));
-							if (capturedData) {
-								capturedData = JSON.parse(capturedData);
-								if (capturedData['formId'] == formId) {
-									gfRepeater_submitted = true;
-								}
+					if (jQuery.captures()) {
+						capturedData = jQuery.captures(dataElement.attr('name'));
+						if (capturedData) {
+							capturedData = JSON.parse(capturedData);
+							if (repeaterId == 1 && capturedData['formId'] == formId) {
+								gfRepeater_submitted = true;
 							}
 						}
-						
+					}
+
+					if (repeaterId == 1) {
 						jQuery(form).capture();
 					}
 
@@ -73,9 +74,17 @@ function gfRepeater_getRepeaters() {
 					var removeElement = endElement.find('.gf_repeater_remove');
 					var addFunction = 'gfRepeater_repeatRepeater('+formId+','+repeaterId+');';
 					var removeFunction = 'gfRepeater_unrepeatRepeater('+formId+','+repeaterId+');';
+
 					jQuery(addElement).attr({onclick:addFunction,onkeypress:addFunction});
 					jQuery(removeElement).attr({onclick:removeFunction,onkeypress:removeFunction});
-					repeaterControllers = {add:addElement,remove:removeElement,data:dataElement,start:startElement,end:endElement};
+
+					repeaterControllers = {
+						add:addElement,
+						remove:removeElement,
+						data:dataElement,
+						start:startElement,
+						end:endElement
+					};
 
 					var repeaterSettings = {};
 					var repeaterStart = Number(repeaterInfo['start']);
@@ -84,20 +93,39 @@ function gfRepeater_getRepeaters() {
 					if (!repeaterStart || (repeaterMax && repeaterStart > repeaterMax)) { repeaterStart = 1; }
 					if (!repeaterMin || (repeaterMax && repeaterMin > repeaterMax)) { repeaterMin = 1; }
 					if (!repeaterMax || (repeaterMin && repeaterMax && repeaterMin > repeaterMax)) { repeaterMax = null; }
-					repeaterSettings = {start:repeaterStart,min:repeaterMin,max:repeaterMax};
+
+					repeaterSettings = {
+						start:repeaterStart,
+						min:repeaterMin,
+						max:repeaterMax
+					};
 
 					var repeaterdata = {};
 					var repeaterTabIndex = Number(dataElement.attr('tabindex'));
 					var prevRepeatCount = null;
 					if (gfRepeater_submitted && capturedData) { prevRepeatCount = capturedData['repeatCount']; }
-					repeaterdata = {repeatCount:1,prevRepeatCount:prevRepeatCount,childrenCount:repeaterChildCount,paremCount:repeaterParemCount,tabIndex:repeaterTabIndex,inputData:repeaterChildrenInputData};
 
-					repeaters[repeaterId] = {data:repeaterdata,settings:repeaterSettings,controllers:repeaterControllers,children:repeaterChildren};
+					repeaterdata = {
+						repeatCount:1,
+						prevRepeatCount:prevRepeatCount,
+						childrenCount:repeaterChildCount,
+						paremCount:repeaterParemCount,
+						tabIndex:repeaterTabIndex,
+						inputData:repeaterChildrenInputData
+					};
+
+					repeaters[repeaterId] = {
+						data:repeaterdata,
+						settings:repeaterSettings,
+						controllers:repeaterControllers,
+						children:repeaterChildren
+					};
 
 					// Set back to defaults for the next repeater
 					repeaterFound = 0;
 					repeaterChildCount = 0;
 					repeaterParemCount = 0;
+					parentSection = null;
 					repeaterChildren = {};
 					repeaterChildrenInputData = {};
 					repeaterChildrenPrePopulate = {};
@@ -114,6 +142,8 @@ function gfRepeater_getRepeaters() {
 					var childInputNames = [];
 					var childInputCount = 0;
 					var childRequired = false;
+					var childInfo = repeaterInfo['children'][childIdNum];
+					var childParentSection = parentSection;
 					var childType;
 					var inputMask;
 					var conditionalLogic;
@@ -133,10 +163,15 @@ function gfRepeater_getRepeaters() {
 						childType = 'section';
 					}
 
-					if (repeaterInfo['children'][childIdNum]['required']) { childRequired = true; }
-					if (repeaterInfo['children'][childIdNum]['inputMask']) { inputMask = repeaterInfo['children'][childIdNum]['inputMask']; }
-					if (repeaterInfo['children'][childIdNum]['conditionalLogic']) {
-						conditionalLogic = repeaterInfo['children'][childIdNum]['conditionalLogic'];
+					if (childType == 'section') {
+						parentSection = repeaterChildCount;
+						childParentSection = null;
+					}
+
+					if (childInfo['required']) { childRequired = true; }
+					if (childInfo['inputMask']) { inputMask = childInfo['inputMask']; }
+					if (childInfo['conditionalLogic']) {
+						conditionalLogic = childInfo['conditionalLogic'];
 						conditionalLogic['skip'] = [];
 					}
 
@@ -155,11 +190,11 @@ function gfRepeater_getRepeaters() {
 							if (jQuery.inArray(inputName, childInputNames) == -1) { childInputNames.push(inputName); }
 							if (inputName.slice(-2) == '[]') { inputName2 = inputName.slice(0, inputName.length - 2); } else { inputName2 = inputName; }
 
-							if (repeaterInfo['children'][childIdNum]['prePopulate']) {
+							if (childInfo['prePopulate']) {
 								if (childType == 'checkbox' || childType == 'radio') {
-									inputPrePopulate = repeaterInfo['children'][childIdNum]['prePopulate'];
-								} else if (repeaterInfo['children'][childIdNum]['prePopulate'][inputName2.split('_')[1]]) {
-									inputPrePopulate = repeaterInfo['children'][childIdNum]['prePopulate'][inputName2.split('_')[1]];
+									inputPrePopulate = childInfo['prePopulate'];
+								} else if (childInfo['prePopulate'][inputName2.split('_')[1]]) {
+									inputPrePopulate = childInfo['prePopulate'][inputName2.split('_')[1]];
 								}
 
 								if (inputPrePopulate) {
@@ -170,11 +205,29 @@ function gfRepeater_getRepeaters() {
 							}
 						};
 
-						childInputs[childInputCount] = {element:inputElement,id:inputId,name:inputName,defaultValue:inputDefaultValue,prePopulate:inputPrePopulate};
+						childInputs[childInputCount] = {
+							element:inputElement,
+							id:inputId,
+							name:inputName,
+							defaultValue:inputDefaultValue,
+							prePopulate:inputPrePopulate
+						};
+
 						if (gfRepeater_debug) { console.log('Form #'+formId+' - Repeater #'+repeaterId+' - Child #'+repeaterChildCount+' - Input Found: '+inputId); }
 					});
 
-					repeaterChildren[repeaterChildCount] = {element:childElement,id:childId,idNum:childIdNum,inputs:childInputs,inputCount:childInputCount,required:childRequired,type:childType,inputMask:inputMask,conditionalLogic:conditionalLogic}
+					repeaterChildren[repeaterChildCount] = {
+						element:childElement,
+						id:childId,
+						idNum:childIdNum,
+						inputs:childInputs,
+						inputCount:childInputCount,
+						required:childRequired,
+						type:childType,
+						inputMask:inputMask,
+						conditionalLogic:conditionalLogic,
+						parentSection:childParentSection
+					};
 
 					repeaterChildrenInputData[childIdNum] = childInputNames;
 				}
@@ -194,19 +247,20 @@ function gfRepeater_getRepeaters() {
 }
 
 /*
-	gfRepeater_setRepeaterChildAttrs(formId, repeaterId, repeaterChildElement, repeatCount)
+	gfRepeater_setRepeaterChildAttrs(formId, repeaterId, repeaterChildElement, repeatId)
 		Adds the repeater ID number and Count number to the end of repeater child ID and name.
 
 		formId					The form Id.
 		repeaterId				The repeater ID.
 		repeaterChildElement	The child element to run the function for.
-		repeatCount (Optional)	The repeat count number to assign the child to. If a number is not specified, one will be automatically assigned. A 1 is required the first time this function is used during the setup process.
+		repeatId (Optional)		The repeatId to assign the child to. If a number is not specified, one will be automatically assigned. A 1 is required the first time this function is used during the setup process.
 */
-function gfRepeater_setRepeaterChildAttrs(formId, repeaterId, repeaterChildElement, repeatCount) {
-	if (!repeatCount) { var repeatCount = gfRepeater_repeaters[formId][repeaterId]['data']['repeatCount'] + 1; }
+function gfRepeater_setRepeaterChildAttrs(formId, repeaterId, repeaterChildElement, repeatId) {
 	var repeater = gfRepeater_repeaters[formId][repeaterId];
+	if (!repeatId) { var repeatId = repeater['data']['repeatCount'] + 1; }
 	var childId = jQuery(repeaterChildElement).attr('id').split('-')[0];
 	var childKey = gfRepeater_getIndex(repeater['children'], 'id', childId);
+	var checkValidation = jQuery('#gform_wrapper_' + formId).hasClass('gform_validation_error');
 
 	if (childKey) {
 		var failedValidation = false;
@@ -217,11 +271,29 @@ function gfRepeater_setRepeaterChildAttrs(formId, repeaterId, repeaterChildEleme
 		var inputMask = child['inputMask'];
 		var tabindex = repeater['data']['tabIndex'];
 
-		var newRootId = childId+'-'+repeaterId+'-'+repeatCount;
-		jQuery(repeaterChildElement).attr('id', newRootId);
+		var newRootId = childId+'-'+repeaterId+'-'+repeatId;
+		jQuery(repeaterChildElement)
+			.attr('id', newRootId)
+			.attr('data-repeater-parentId', repeaterId)
+			.attr('data-repeater-repeatId', repeatId)
+			.attr('data-repeater-childId', childKey)
+			.addClass('gf_repeater_child_field');
 
 		gfRepeater_replaceShortcodes(repeaterChildElement);
-		gfRepeater_doShortcode(repeaterChildElement, 'count', repeatCount);
+		gfRepeater_doShortcode(repeaterChildElement, 'count', repeatId);
+		gfRepeater_doShortcode(repeaterChildElement, 'buttons', repeater['controllers']['add'].parent().clone());
+		gfRepeater_doShortcode(repeaterChildElement, 'add', repeater['controllers']['add'].clone());
+		gfRepeater_doShortcode(repeaterChildElement, 'remove', repeater['controllers']['remove'].clone());
+
+		var removeFunction = 'gfRepeater_unrepeatRepeater('+formId+','+repeaterId+','+repeatId+');';
+		jQuery(repeaterChildElement)
+			.find('.gf_repeater_remove')
+			.attr({onclick:removeFunction,onkeypress:removeFunction})
+			.show();
+
+		jQuery(repeaterChildElement)
+			.find('.gf_repeater_add')
+			.show();
 
 		jQuery.each(repeater['children'][childKey]['inputs'], function(key, value){
 			var inputId = this['id'];
@@ -229,32 +301,35 @@ function gfRepeater_setRepeaterChildAttrs(formId, repeaterId, repeaterChildEleme
 			var prePopulate = '';
 
 			if (childType == 'radio') {
-				var inputElement = gfRepeater_findElementByIdOrName(repeaterChildElement, null, inputId);
+				var inputElement = gfRepeater_findElementByNameOrId(repeaterChildElement, null, inputId);
 			} else {
-				var inputElement = gfRepeater_findElementByIdOrName(repeaterChildElement, inputName, inputId);
+				var inputElement = gfRepeater_findElementByNameOrId(repeaterChildElement, inputName, inputId);
 			}
 
+			inputElement.attr('data-repeater-inputId', key);
+
 			if (inputId) {
-				var newInputId = inputId+'-'+repeaterId+'-'+repeatCount;
+				var newInputId = inputId+'-'+repeaterId+'-'+repeatId;
 				jQuery(inputElement).attr('id', newInputId);
 				jQuery(repeaterChildElement).find("label[for^='"+inputId+"']").attr('for', newInputId);
 			}
 
 			if (inputName) {
 				if (inputName.slice(-2) == '[]') {
-					var newInputName = inputName.slice(0, inputName.length - 2)+'-'+repeaterId+'-'+repeatCount+'[]';
+					var newInputName = inputName.slice(0, inputName.length - 2)+'-'+repeaterId+'-'+repeatId+'[]';
 				} else {
-					var newInputName = inputName+'-'+repeaterId+'-'+repeatCount;
+					var newInputName = inputName+'-'+repeaterId+'-'+repeatId;
 				}
 
-				jQuery(inputElement).attr('name', newInputName);
-				jQuery(inputElement).attr('tabindex', tabindex);
+				jQuery(inputElement)
+					.attr('name', newInputName)
+					.attr('tabindex', tabindex);
 			}
 
 			if (inputMask) { jQuery(inputElement).mask(inputMask); }
 
-			if (this['prePopulate'][repeatCount]) {
-				prePopulate = this['prePopulate'][repeatCount];
+			if (this['prePopulate'][repeatId]) {
+				prePopulate = this['prePopulate'][repeatId];
 			} else if (this['prePopulate'][0]) {
 				prePopulate = this['prePopulate'][0];
 			}
@@ -273,12 +348,13 @@ function gfRepeater_setRepeaterChildAttrs(formId, repeaterId, repeaterChildEleme
 			}
 
 			if (window['gformInitDatepicker'] && childType == 'date' && inputCount == 2 && key == 1) {
-				jQuery(inputElement).removeClass('hasDatepicker');
-				jQuery(inputElement).datepicker('destroy');
-				jQuery(inputElement).siblings('.ui-datepicker-trigger').remove();
+				jQuery(inputElement)
+					.removeClass('hasDatepicker')
+					.datepicker('destroy')
+					.siblings('.ui-datepicker-trigger').remove();
 			}
 
-			if (gfRepeater_submitted) {
+			if (gfRepeater_submitted && checkValidation) {
 				if (newInputName) {
 					var savedValue = jQuery.captures(newInputName);
 					if (savedValue) {
@@ -287,12 +363,14 @@ function gfRepeater_setRepeaterChildAttrs(formId, repeaterId, repeaterChildEleme
 				}
 
 				if (childRequired) {
-					var splitName = newInputName.replace('.', '_').split(/(_|-)/);
-					if (childType == 'name' && jQuery.inArray(splitName[4], ['3', '6']) == -1) { return true; }
-					if (childType == 'address' && jQuery.inArray(splitName[4], ['2']) !== -1) { return true; }
+					if (newInputName) {
+						var splitName = newInputName.replace('.', '_').split(/(_|-)/);
+						if (childType == 'name' && jQuery.inArray(splitName[4], ['3', '6']) == -1) { return true; }
+						if (childType == 'address' && jQuery.inArray(splitName[4], ['2']) !== -1) { return true; }
+					}
 
 					var inputValue = gfRepeater_getInputValue(inputElement);
-					if (!inputValue && repeatCount <= repeater['data']['prevRepeatCount']) {
+					if (!inputValue && repeatId <= repeater['data']['prevRepeatCount']) {
 						failedValidation = true;
 					}
 				}
@@ -308,15 +386,16 @@ function gfRepeater_setRepeaterChildAttrs(formId, repeaterId, repeaterChildEleme
 				childLabel.append("<span class=\"gfield_required\">*</span>");
 			}
 
-			if (gfRepeater_submitted) {
+			if (gfRepeater_submitted && checkValidation) {
 				if (failedValidation) {
 					repeaterChildElement.addClass('gfield_error');
 					if (!repeaterChildElement.has('.validation_message').length) {
 						repeaterChildElement.append("<div class=\"gfield_description validation_message\">This field is required.</div>");
 					}
 				} else {
-					repeaterChildElement.removeClass('gfield_error');
-					repeaterChildElement.find('.validation_message').remove();
+					repeaterChildElement
+						.removeClass('gfield_error')
+						.find('.validation_message').remove();
 				}
 			}
 		}
@@ -324,46 +403,76 @@ function gfRepeater_setRepeaterChildAttrs(formId, repeaterId, repeaterChildEleme
 }
 
 /*
-	gfRepeater_conditionalLogic_set(formId, repeaterId, repeaterChildId, repeatCount)
+	gfRepeater_resetRepeaterChildrenAttrs(formId, repeaterId)
+		Resets all repeatId's so that they are chronological.
+*/
+function gfRepeater_resetRepeaterChildrenAttrs(formId, repeaterId) {
+	var repeaterChildren = gfRepeater_select(formId, repeaterId);
+	var x = 0;
+
+	jQuery(repeaterChildren).each(function(){
+		if (jQuery(this).attr('data-repeater-childid') == 1) {
+			x += 1;
+		}
+
+		if (jQuery(this).attr('data-repeater-repeatid') !== x) {
+			gfRepeater_setRepeaterChildAttrs(formId, repeaterId, jQuery(this), x);
+		}
+	});
+}
+
+/*
+	gfRepeater_conditionalLogic_set(formId, repeaterId, repeaterChildId, repeatId)
 		Runs 'gfRepeater_conditionalLogic_do' and assigns change event for all fields involed with the repeaterChildElement's conditional logic.
 */
-function gfRepeater_conditionalLogic_set(formId, repeaterId, repeaterChildId, repeatCount) {
-	gfRepeater_conditionalLogic_do(formId, repeaterId, repeaterChildId, repeatCount);
-	var selectorExt = '-'+repeaterId+'-'+repeatCount;
+function gfRepeater_conditionalLogic_set(formId, repeaterId, repeaterChildId, repeatId) {
+	gfRepeater_conditionalLogic_do(formId, repeaterId, repeaterChildId, repeatId);
+
 	var repeater = gfRepeater_repeaters[formId][repeaterId];
 	var repeaterChild = repeater['children'][repeaterChildId]
 	var conditionalLogic = repeaterChild['conditionalLogic'];
 
 	jQuery.each(conditionalLogic['rules'], function(key, value){
 		var fieldId = value['fieldId'];
-		var fieldKey = gfRepeater_getIndex(repeater['children'], 'idNum', fieldId);
-		var child = repeater['children'][fieldKey];
-		var childIdName = child['id']+selectorExt;
-		var childElement = jQuery('#'+childIdName);
+		var childId = gfRepeater_getIndex(repeater['children'], 'idNum', fieldId);
 
-		jQuery.each(child['inputs'], function(key, input){
-			var inputId = input['id']+selectorExt;
-			var inputName = input['name']+selectorExt;
-			var inputElement = gfRepeater_findElementByIdOrName(childElement, inputName, inputId);
+		if (childId !== false) {
+			var inputs = gfRepeater_select(formId, repeaterId, repeatId, childId, '*');
+		} else {
+			var inputs = jQuery('#field_' + formId + '_' + fieldId + ' :input');
+			repeatId = null;
+		}
 
-			jQuery(inputElement).bind('propertychange change click keyup input paste', function(){
-				gfRepeater_conditionalLogic_do(formId, repeaterId, repeaterChildId, repeatCount);
+		jQuery.each(inputs, function(key, input){
+			jQuery(this).bind('propertychange change click keyup input paste', function(){
+				gfRepeater_conditionalLogic_do(formId, repeaterId, repeaterChildId, repeatId);
 			});
 		});
 	});
 }
 
 /*
-	gfRepeater_conditionalLogic_do(formId, repeaterId, repeaterChildId, repeatCount)
+	gfRepeater_conditionalLogic_setAll(formId, repeaterId, repeatId)
+		Sets conditionalLogic for all children inside of a repeatId.
+*/
+function gfRepeater_conditionalLogic_setAll(formId, repeaterId, repeatId) {
+	var repeater = gfRepeater_repeaters[formId][repeaterId];
+	jQuery.each(repeater['children'], function(key, value){
+		if (this.conditionalLogic) {
+			gfRepeater_conditionalLogic_set(formId, repeaterId, key, repeatId);
+		}
+	});
+}
+
+/*
+	gfRepeater_conditionalLogic_do(formId, repeaterId, repeaterChildId, repeatId)
 		Hides or Shows repeaterChildElement depending on conditional logic.
 */
-function gfRepeater_conditionalLogic_do(formId, repeaterId, repeaterChildId, repeatCount) {
-	var selectorExt = '-'+repeaterId+'-'+repeatCount;
+function gfRepeater_conditionalLogic_do(formId, repeaterId, repeaterChildId, repeatId) {
 	var repeater = gfRepeater_repeaters[formId][repeaterId];
 	var repeaterChild = repeater['children'][repeaterChildId]
 	var conditionalLogic = repeaterChild['conditionalLogic'];
-	var repeaterChildIdName = repeaterChild['id']+selectorExt;
-	var repeaterChildElement = jQuery('#'+repeaterChildIdName);
+	var effectedIds = [repeaterChildId];
 	var conditions = [];
 	var conditionsPassed = false;
 	var hideField = false;
@@ -371,20 +480,35 @@ function gfRepeater_conditionalLogic_do(formId, repeaterId, repeaterChildId, rep
 	jQuery.each(conditionalLogic['rules'], function(key, value){
 		var condition = false;
 		var fieldId = value['fieldId'];
-		var fieldKey = gfRepeater_getIndex(repeater['children'], 'idNum', fieldId);
-		var child = repeater['children'][fieldKey];
-		var childIdName = child['id']+selectorExt;
-		var childElement = jQuery('#'+childIdName);
+		var childId = gfRepeater_getIndex(repeater['children'], 'idNum', fieldId);
 
-		if (child['type'] == 'checkbox' || child['type'] == 'radio') {
-			var inputValue = gfRepeater_getChoiceValue(childElement);
-			if (jQuery.inArray(value['value'], inputValue) !== -1) { inputValue = value['value']; } else { inputValue = false; }
+		if (childId !== false) {
+			var child = repeater['children'][childId];
+			var childElement = gfRepeater_select(formId, repeaterId, repeatId, childId);
+
+			if (child['type'] == 'checkbox' || child['type'] == 'radio') {
+				var inputValue = gfRepeater_getChoiceValue(childElement);
+				var multiInput = true;
+			} else {
+				var inputElement = gfRepeater_select(formId, repeaterId, repeatId, childId, 1);
+				var inputValue = gfRepeater_getInputValue(inputElement);
+				var multiInput = false;
+			}
 		} else {
-			var input = child['inputs'][1];
-			var inputId = input['id']+selectorExt;
-			var inputName = input['name']+selectorExt;
-			var inputElement = gfRepeater_findElementByIdOrName(childElement, inputName, inputId);
-			var inputValue = gfRepeater_getInputValue(inputElement);
+			var fieldElement = jQuery('#field_' + formId + '_' + fieldId);
+			var firstInput = fieldElement.find(':input').first();
+
+			if (firstInput.is(':checkbox, :radio')) {
+				var inputValue = gfRepeater_getChoiceValue(fieldElement);
+				var multiInput = true;
+			} else {
+				var inputValue = gfRepeater_getInputValue(firstInput);
+				var multiInput = false;
+			}
+		}
+
+		if (multiInput) {
+			if (jQuery.inArray(value['value'], inputValue) !== -1) { inputValue = value['value']; } else { inputValue = false; }
 		}
 
 		condition = gf_matches_operation(inputValue, value['value'], value['operator']);
@@ -401,18 +525,40 @@ function gfRepeater_conditionalLogic_do(formId, repeaterId, repeaterChildId, rep
 		hideField = true;
 	}
 
-	if (hideField) {
-		repeaterChildElement.hide();
-		if (jQuery.inArray(repeatCount, conditionalLogic['skip']) == -1) {
-			conditionalLogic['skip'].push(repeatCount);
-		}
-	} else {
-		repeaterChildElement.show();
-		if (jQuery.inArray(repeatCount, conditionalLogic['skip']) !== -1) {
-			var skipIndex = conditionalLogic['skip'].indexOf(repeatCount);
-			conditionalLogic['skip'].splice(skipIndex, 1);
-		}
+	if (repeaterChild['type'] == 'section') {
+		var sectionChildren = gfRepeater_getIndex(repeater['children'], 'parentSection', repeaterChildId, true);
+		if (sectionChildren !== false) { effectedIds = effectedIds.concat(sectionChildren); }
 	}
+
+	jQuery.each(effectedIds, function(key, value){
+		var effectedChild = repeater['children'][value];
+		var effectedLogic = effectedChild['conditionalLogic'];
+		var effectedElement = gfRepeater_select(formId, repeaterId, repeatId, value);
+		var skipId = repeatId;
+
+		if (skipId == null) { skipId = 'all'; }
+
+		if (effectedElement.length) {
+			if (hideField) {
+				effectedElement.hide();
+
+				if (effectedLogic) {
+					if (jQuery.inArray(skipId, effectedLogic['skip']) == -1) {
+						effectedLogic['skip'].push(skipId);
+					}
+				}
+			} else {
+				effectedElement.show();
+
+				if (effectedLogic) {
+					if (jQuery.inArray(skipId, effectedLogic['skip']) !== -1) {
+						var skipIndex = effectedLogic['skip'].indexOf(skipId);
+						effectedLogic['skip'].splice(skipIndex, 1);
+					}
+				}
+			}
+		}
+	});
 
 	gfRepeater_updateDataElement(formId, repeaterId);
 }
@@ -438,10 +584,10 @@ function gfRepeater_doShortcode(element, shortcode, value) {
 		element			The element to search and replace.
 */
 function gfRepeater_replaceShortcodes(element) {
-	var shortcodes = ['count'];
-	var html = element.html();
+	var shortcodes = ['count', 'buttons', 'add', 'remove'];
 
 	jQuery.each(shortcodes, function(key, shortcode){
+		var html = element.html();
 		element.html(html.replace('[gfRepeater-'+shortcode+']', '<span class=\"gfRepeater-shortcode-'+shortcode+'\"></span>'));
 	});
 }
@@ -455,13 +601,14 @@ function gfRepeater_replaceShortcodes(element) {
 */
 function gfRepeater_repeatRepeater(formId, repeaterId) {
 	var repeater = gfRepeater_repeaters[formId][repeaterId];
+	var repeatId = repeater['data']['repeatCount'] + 1;
 	if (repeater['settings']['max'] && repeater['data']['repeatCount'] >= repeater['settings']['max']) { return; }
-	jQuery(repeater['controllers']['start']).closest('form').trigger('beforeRepeat', [repeaterId, repeater['data']['repeatCount'] + 1]);
 
-	var lastElementKey = repeater['data']['childrenCount'];
-	var lastElement = repeater['children'][lastElementKey]['element'];
-	lastElement = lastElement.attr('id');
-	lastElement = jQuery('#'+lastElement.slice(0, -1)+gfRepeater_repeaters[formId][repeaterId]['data']['repeatCount']);
+	jQuery(repeater['controllers']['start'])
+		.parents('form')
+		.trigger('gform_repeater_before_repeat', [repeaterId, repeatId]);
+
+	var lastElement = gfRepeater_select(formId, repeaterId).last();
 
 	jQuery.each(repeater['children'], function(key, value){
 		var clonedElement = jQuery(this.element).clone();
@@ -471,12 +618,10 @@ function gfRepeater_repeatRepeater(formId, repeaterId) {
 
 		clonedElement.insertAfter(lastElement);
 
-		if (this.conditionalLogic) {
-			gfRepeater_conditionalLogic_set(formId, repeaterId, key, repeater['data']['repeatCount'] + 1);
-		}
-
 		lastElement = clonedElement;
 	});
+
+	gfRepeater_conditionalLogic_setAll(formId, repeaterId, repeatId);
 
 	repeater['data']['repeatCount'] += 1;
 	gfRepeater_updateDataElement(formId, repeaterId);
@@ -484,35 +629,47 @@ function gfRepeater_repeatRepeater(formId, repeaterId) {
 
 	if (window['gformInitDatepicker']) { gformInitDatepicker(); }
 
-	jQuery(repeater['controllers']['start']).closest('form').trigger('afterRepeat', [repeaterId, repeater['data']['repeatCount']]);
+	jQuery(repeater['controllers']['start'])
+		.parents('form')
+		.trigger('gform_repeater_after_repeat', [repeaterId, repeatId]);
+
 	if (gfRepeater_debug) { console.log('Form #'+formId+' - Repeater #'+repeaterId+' - repeated'); }
 }
 
 /*
-	gfRepeater_unrepeatRepeater(formId, repeaterId, repeaterChildId)
+	gfRepeater_unrepeatRepeater(formId, repeaterId, repeatId)
 		Un-repeats the repeater once.
 
 		formId						The form Id.
 		repeaterId					The repeater ID number to unrepeat.
-		repeaterChildId (Optional)	The repeater child ID number to unrepeat. If an ID number is not specified, the last one will be chosen.
+		repeatId (Optional)			The repeat ID number to unrepeat. If an ID number is not specified, the last one will be chosen.
 */
-function gfRepeater_unrepeatRepeater(formId, repeaterId, repeaterChildId) {
+function gfRepeater_unrepeatRepeater(formId, repeaterId, repeatId) {
 	var repeater = gfRepeater_repeaters[formId][repeaterId];
 	if (repeater['data']['repeatCount'] <= repeater['settings']['min']) { return; }
-	if (!repeaterChildId) { var repeaterChildId = repeater['data']['repeatCount']; }
-	jQuery(repeater['controllers']['start']).closest('form').trigger('beforeUnRepeat', [repeaterId, repeaterChildId]);
+	if (!repeatId) { var repeatId = repeater['data']['repeatCount']; }
 
-	jQuery.each(repeater['children'], function(key, value){
-		var childElement = jQuery('#'+this['id']+'-'+repeaterId+'-'+repeaterChildId);
-		jQuery(childElement).remove();
+	jQuery(repeater['controllers']['start'])
+		.parents('form')
+		.trigger('gform_repeater_before_unrepeat', [repeaterId, repeatId]);
+
+	jQuery.each(repeater['children'], function(childId, value){
+		gfRepeater_select(formId, repeaterId, repeatId, childId).remove();
 	});
 
 	repeater['data']['repeatCount'] -= 1;
 	gfRepeater_updateDataElement(formId, repeaterId);
 	gfRepeater_updateRepeaterControls(formId, repeaterId);
 
-	jQuery(repeater['controllers']['start']).closest('form').trigger('afterUnRepeat', [repeaterId, repeaterChildId]);
-	if (gfRepeater_debug) { console.log('Form #'+formId+' - Repeater #'+repeaterId+' - Child #'+repeaterChildId+' - unrepeated'); }
+	if (repeatId !== repeater['data']['repeatCount'] + 1) {
+		gfRepeater_resetRepeaterChildrenAttrs(formId, repeaterId);
+	}
+
+	jQuery(repeater['controllers']['start'])
+		.parents('form')
+		.trigger('gform_repeater_after_unrepeat', [repeaterId, repeatId]);
+
+	if (gfRepeater_debug) { console.log('Form #'+formId+' - Repeater #'+repeaterId+' - Repeat #'+repeatId+' - unrepeated'); }
 }
 
 /*
@@ -594,21 +751,21 @@ function gfRepeater_updateRepeaterControls(formId, repeaterId) {
 }
 
 /*
-	gfRepeater_resetInputs(formId, repeaterId, repeaterChildKey, repeaterChildElement)
+	gfRepeater_resetInputs(formId, repeaterId, childId, repeaterChildElement)
 		Resets all input elements inside of a repeater child.
 
 		formId					The form Id.
 		repeaterId				The repeater ID.
-		repeaterChildKey		The repeater child ID number.
+		childId					The repeater child ID number.
 		repeaterChildElement	The repeater child element.
 */
-function gfRepeater_resetInputs(formId, repeaterId, repeaterChildKey, repeaterChildElement) {
+function gfRepeater_resetInputs(formId, repeaterId, childId, repeaterChildElement) {
 	var repeater = gfRepeater_repeaters[formId][repeaterId];
-	jQuery.each(repeater['children'][repeaterChildKey]['inputs'], function(key, value){
+	jQuery.each(repeater['children'][childId]['inputs'], function(key, value){
 		var inputId = this['id'];
 		var inputName = this['name'];
 		var inputDefaultValue = this['defaultValue'];
-		var inputElement = gfRepeater_findElementByIdOrName(repeaterChildElement, inputName, inputId);
+		var inputElement = gfRepeater_findElementByNameOrId(repeaterChildElement, inputName, inputId);
 
 		if (inputElement) {
 			gfRepeater_setInputValue(inputElement, inputDefaultValue);
@@ -617,14 +774,40 @@ function gfRepeater_resetInputs(formId, repeaterId, repeaterChildKey, repeaterCh
 }
 
 /*
-	gfRepeater_findElementByIdOrName(searchElement, elementName, elementId)
+	gfRepeater_select(formId, repeaterId, repeatId, childId, inputId)
+		Selects an element depending on the variables passed.
+
+		formId						The form Id.
+		repeaterId (Optional)		The repeater Id.
+		repeatId (Optional)			The repeat Id.
+		childId (Optional)			The child Id.
+		inputId (Optional)			The input Id. Also accepts '*' to select all inputs.
+*/
+function gfRepeater_select(formId, repeaterId, repeatId, childId, inputId) {
+	var selector = 'div#gform_wrapper_'+formId+'>form#gform_'+formId;
+	if (repeaterId || repeatId || childId || inputId) { selector += '>.gform_body .gform_fields>.gfield.gf_repeater_child_field'; }
+	if (repeaterId) { selector += '[data-repeater-parentid='+repeaterId+']'; }
+	if (repeatId) { selector += '[data-repeater-repeatid='+repeatId+']'; }
+	if (childId) { selector += '[data-repeater-childid='+childId+']'; }
+	if (inputId) {
+		if (inputId == '*') {
+			selector += ' [data-repeater-inputid]';
+		} else {
+			selector += ' [data-repeater-inputid='+inputId+']';
+		}
+	}
+	return jQuery(selector);
+}
+
+/*
+	gfRepeater_findElementByNameOrId(searchElement, elementName, elementId)
 		Searches for an an element inside of another element by ID or Name. If both an ID and a Name are supplied it will first try the Name and then the ID.
 
 		searchElement			Element to search inside.
 		inputName (Optional)	A element name to search for.
 		inputId (Optional)		A element ID to search for.
 */
-function gfRepeater_findElementByIdOrName(searchElement, elementName, elementId) {
+function gfRepeater_findElementByNameOrId(searchElement, elementName, elementId) {
 	if (elementName) { var foundElement = jQuery(searchElement).find("[name^='"+elementName+"']"); }
 	if (!foundElement && elementId) { var foundElement = jQuery(searchElement).find("[id^='"+elementId+"']"); }
 	if (foundElement) { return foundElement; } else { return false; }
@@ -632,21 +815,31 @@ function gfRepeater_findElementByIdOrName(searchElement, elementName, elementId)
 
 /*
 	gfRepeater_getIndex
-		Searches 'object' where 'key' equals 'value'. Returns false if nothing was found.
+		Searches 'object' where 'key' equals 'value'.
+		Returns first result if multiple is false.
+		Returns array with all key results if multiple is true.
+		Returns false if nothing was found.
 
-		object	Object or array to search through.
-		key		Key to search for.
-		value	Value to search for.
+		object		Object or array to search through.
+		key			Key to search for.
+		value		Value to search for.
+		multiple	Set to true to return all results in an array.
 */
-function gfRepeater_getIndex(object, key, value) {
-	var theKey;
+function gfRepeater_getIndex(object, key, value, multiple) {
+	var keys = [];
+
 	jQuery.each(object, function(fieldKey, fieldValue){
 		if (fieldValue[key] == value) {
-			theKey = fieldKey;
-			return false;
+			keys.push(fieldKey);
+			if (!multiple) { return false; }
 		}
 	});
-	if (theKey) { return theKey; } else { return false; }
+
+	if (keys.length) {
+		if (multiple) {
+			return keys;
+		} else { return keys[0]; }
+	} else { return false; }
 }
 
 /*
@@ -734,6 +927,7 @@ function gfRepeater_updateDataElement(formId, repeaterId) {
 function gfRepeater_start() {
 	jQuery.each(gfRepeater_repeaters, function(key, repeater){
 		var formId = key;
+		var form = gfRepeater_select(formId);
 
 		jQuery.each(repeater, function(key, value){
 			var repeaterId = key;
@@ -756,8 +950,10 @@ function gfRepeater_start() {
 
 			gfRepeater_setRepeater(formId, repeaterId, repeatCount);
 			gfRepeater_updateRepeaterControls(formId, repeaterId);
-			gfRepeater_updateDataElement(formId, repeaterId)
+			gfRepeater_updateDataElement(formId, repeaterId);
 		});
+
+		jQuery(form).trigger('gform_repeater_init_done');
 	});
 
 	if (window['gformInitDatepicker']) { gformInitDatepicker(); }
@@ -767,6 +963,7 @@ function gfRepeater_start() {
 jQuery(document).bind('gform_post_render', function(){
 	if (gfRepeater_getRepeaters()) {
 		gfRepeater_start();
+		jQuery(window).trigger('gform_repeater_init_done');
 	} else {
 		console.log('There was an error with one of your repeaters. This is usually caused by forgetting to include a repeater-end field or by trying to nest repeaters.');
 	}
