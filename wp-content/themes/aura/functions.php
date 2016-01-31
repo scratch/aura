@@ -7,7 +7,15 @@ function aura_enqueue_style()  {
 	wp_enqueue_style('twentysixteenstyle', get_template_directory_uri() . '/style.css', false);
 }
 
+
+function aura_enqueue_scripts()  {
+  wp_enqueue_script('twentysixteenscript', get_stylesheet_directory_uri() . '/js/aura_descr.js', 
+    array( 'jquery', 'jquery-ui-core', 'jquery-ui-button', 'jquery-ui-autocomplete') );
+}
+
+
 add_action('wp_enqueue_scripts', 'aura_enqueue_style');
+add_action('wp_enqueue_scripts', 'aura_enqueue_scripts');
 
 
 /* pre_render_filter:
@@ -59,7 +67,13 @@ function aura_get_master_aura_form_details($form, $ajax_enabled, $field_values) 
     // if ($bp_val['pos_descr'] != '')  $pos_color_descr[] = $val['pos_descr'];
     // if ($bp_val['neg_descr'] != '')  $neg_color_descr[] = $val['neg_descr'];
   }
-  
+
+  // To display description using JS
+  $json_bp = json_encode($body_part);
+  $html =  '<input type="text/javascript" name="_aura_body_part"' . 
+    'value=' . $json_bp .
+    ' />';
+
   $form['fields'][5]['choices'] = $bp;
   $form['fields'][6]['choices'] = $pos_color;
   $form['fields'][8]['choices'] = $neg_color;
