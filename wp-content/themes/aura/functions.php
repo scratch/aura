@@ -33,8 +33,8 @@ function aura_get_master_aura_form_details($form, $ajax_enabled, $field_values) 
 	);
 	$ar_entries = GFAPI::get_entries(1, $au_search_criteria);
 
-  $body_part = array(); $pos_color = array(); $pos_color_descr = array();
-  $neg_color = array(); $neg_color_descr = array();
+  $body_part = array(); // To hold description associated with bodypart/color.
+  $pos_color = array(); $neg_color = array(); $bp = array();
   
   // Pull details from aura details form to display in this form. 
   // Index each entry by 'body part'
@@ -43,36 +43,35 @@ function aura_get_master_aura_form_details($form, $ajax_enabled, $field_values) 
       continue;  // Assert false.
     else {
       $idx = $entry['1'];
-      $body_part[$idx] = null;  // clean up old data, if any; CSV may contain same entry with different data.
-      if ($entry['2'] != '')  
-        $body_part[$idx]['pos_color'] = array ('text' => $entry['2'], 'value' => $entry['2']);
-      if ($entry['3'] != '')  
-        $body_part[$idx]['neg_color'] = array ('text' => $entry['3'], 'value' => $entry['3']);
-      if ($entry['4'] != '')  
-        $body_part[$idx]['pos_descr'] = array ('text' => $entry['4'], 'value' => $entry['4']);
-      if ($entry['5'] != '')  
-        $body_part[$idx]['neg_descr'] = array ('text' => $entry['5'], 'value' => $entry['5']);
+      $bp[] = array ('text' => $entry['1'], 'value' => $entry['1']);
+      if ($entry['2'] != '')  {
+        $body_part[$idx]['pos_color'][$entry['2']] = $entry['4'];  // Set pos colour value to description
+        $needle = array('text' => $entry['2'], 'value' => $entry['2']);
+        if (!in_array ($needle, $pos_color))
+          $pos_color[] = $needle;
+      }
+
+      if ($entry['3'] != '')  {
+        $body_part[$idx]['neg_color'][$entry['3']] = $entry['5'];
+        $needle = array('text' => $entry['3'], 'value' => $entry['3']);
+        if (!in_array ($needle, $neg_color))
+          $neg_color[] = $needle;
+      }
     }
-  }
-
-  // Just to make the pos and neg colours unique.
-  $bp = array();
-  foreach ($body_part as $bp_idx => $bp_val)  {
-    $bp[] = array ('text' => $bp_idx, 'value' => $bp_idx);
-    if ($bp_val['pos_color'] != ''  &&  !in_array($bp_val['pos_color'], $pos_color))  
-      $pos_color[] = $bp_val['pos_color'];
-    if ($bp_val['neg_color'] != ''  &&  !in_array($bp_val['neg_color'], $neg_color))  
-      $neg_color[] = $bp_val['neg_color'];
-
-    // if ($bp_val['pos_descr'] != '')  $pos_color_descr[] = $val['pos_descr'];
-    // if ($bp_val['neg_descr'] != '')  $neg_color_descr[] = $val['neg_descr'];
   }
 
   // To display description using JS
   $json_bp = json_encode($body_part);
-  $html =  '<input type="text/javascript" name="_aura_body_part"' . 
+  /*
+  $html =  
+    '<input type="hidden" name="aura_body_part"' . 
+    'id="aura_body_part_id"' . 
     'value=' . $json_bp .
-    ' />';
+    ' />' ;
+  */
+  // HACK/REVISIT: Creating JS var safe?
+  $html = '<script type="text/javascript"> var g_aura_body_part=' . $json_bp . '</script>';
+  echo $html;
 
   $form['fields'][5]['choices'] = $bp;
   $form['fields'][6]['choices'] = $pos_color;
