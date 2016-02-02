@@ -20,14 +20,12 @@ jQuery(document).on('gform_repeater_init_done', function() {
 
 	jQuery('#' + au_id_prefix + au_pos_col + '-1-' + au_repeater_idx ).on('change', function() {
     var pcolor = jQuery(this).val();
-    // alert ('pos color: ' + pcolor);
-    // alert ('description: ' + g_aura_body_part[g_bodypart]['pos_color'][pcolor]);
+    alert ('description: ' + g_aura_body_part[g_bodypart]['pos_color'][pcolor]);
 	});
 
 	jQuery('#' + au_id_prefix + au_neg_col + '-1-' + au_repeater_idx ).on('change', function() {
     var negcolor = jQuery(this).val();
-    // alert ('neg color: ' + negcolor);
-    // alert ('description: ' + g_aura_body_part[g_bodypart]['neg_color'][negcolor]);
+    alert ('description: ' + g_aura_body_part[g_bodypart]['neg_color'][negcolor]);
 	});
 });
 
