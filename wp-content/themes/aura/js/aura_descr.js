@@ -7,12 +7,34 @@
 var au_id_prefix = "input_";
 var au_body_part = "3_5";
 var au_pos_col = "3_7";
+var au_pos_descr = "3_8";
 var au_neg_col = "3_9";
+var au_neg_descr = "3_10";
 var au_repeater_idx = 1;
-var g_bodypart;
+var g_bodypart;  // Required by all other selections.
 
+var au_defaultDescription = "This set of choice does not have any description";
+
+/* Triggered by init_done. First pick up the body part chosen, then positive or 
+ * negative colour. Note that the code is repetitive: essentially, Create a ID 
+ * using the variables above, pick the value of that variable, get associated
+ * description.
+ */
 jQuery(document).on('gform_repeater_init_done', function() {
+  au_GetAndDisplayFormDescription();
+});
 
+// While each new form is repeated, get the values for the newly created # ID's.
+// gform_repeater_after_repeat
+//	  ++au_repeater_idx;
+jQuery(document).on('gform_repeater_after_repeat', function() {
+  ++au_repeater_idx;
+  au_GetAndDisplayFormDescription();
+});
+
+function au_GetAndDisplayFormDescription()  {
+  /* Fetching body-part, positive/negative choice made from the 'client aura form
+   */
 	jQuery('#' + au_id_prefix + au_body_part + '-1-' + au_repeater_idx).on('change', function() {
     g_bodypart = jQuery(this).val();
 		// alert("bodypart: " + g_bodypart);
@@ -20,20 +42,32 @@ jQuery(document).on('gform_repeater_init_done', function() {
 
 	jQuery('#' + au_id_prefix + au_pos_col + '-1-' + au_repeater_idx ).on('change', function() {
     var pcolor = jQuery(this).val();
-    alert ('description: ' + g_aura_body_part[g_bodypart]['pos_color'][pcolor]);
+    var descr = g_aura_body_part[g_bodypart]['pos_color'][pcolor]; // 'pos_color' may not always be present.
+    
+    descr = au_AddDescription(descr, g_bodypart, pcolor);
+    // alert (descr);
+    // Putting the description into the form description box. Easy to pick up for PDF
+    jQuery('#' + au_id_prefix + au_pos_descr + '-1-' + au_repeater_idx ).val(descr);
 	});
 
 	jQuery('#' + au_id_prefix + au_neg_col + '-1-' + au_repeater_idx ).on('change', function() {
     var negcolor = jQuery(this).val();
-    alert ('description: ' + g_aura_body_part[g_bodypart]['neg_color'][negcolor]);
-	});
-});
+    var descr = g_aura_body_part[g_bodypart]['neg_color'][negcolor]; // 'neg_color' may not always be present.
 
-// While each new form is repeated, get the values for the newly created # ID's.
-// gform_repeater_after_repeat
-//	  ++au_repeater_idx;
-jQuery(document).on('gform_repeater_after_repeat', function() {
-	jQuery('#' + au_id_prefix + au_pos_col + '-1-' + au_repeater_idx ).on('change', function() {
-		alert("pos color");
+    alert ('description: ' + descr);
+    descr = au_AddDescription(descr, g_bodypart, negcolor);
+    // Putting description into form box
+    jQuery('#' + au_id_prefix + au_neg_descr + '-1-' + au_repeater_idx ).val(descr);
 	});
-});
+}
+
+
+function au_AddDescription (descr, bodypart, color)  {
+  var dprefix =  bodypart + ", " + color + ": ";
+
+  if (descr == null)  {
+    return (dprefix + au_defaultDescription);
+  }
+
+  return (dprefix + descr);
+}
