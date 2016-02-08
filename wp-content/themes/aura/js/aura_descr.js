@@ -15,26 +15,25 @@ var g_bodypart;  // Required by all other selections.
 
 var au_defaultDescription = "This set of choice does not have any description";
 
-/* Triggered by init_done. First pick up the body part chosen, then positive or 
- * negative colour. Note that the code is repetitive: essentially, Create a ID 
- * using the variables above, pick the value of that variable, get associated
- * description.
+/* Triggered by gform_repeater_init_done. First pick up the body part chosen, 
+ * then positive or * negative colour. Note that the code is repetitive: 
+ * essentially, Create an ID using the variables above, pick the value of 
+ * that variable, get associated description.
  */
 jQuery(document).on('gform_repeater_init_done', function() {
   au_GetAndDisplayFormDescription();
 });
 
-// While each new form is repeated, get the values for the newly created # ID's.
-// gform_repeater_after_repeat
-//	  ++au_repeater_idx;
+/* While each new form is repeated, get the values for the newly created # ID's.
+ * gform_repeater_after_repeat trigger set by repeater.
+ */
 jQuery(document).on('gform_repeater_after_repeat', function() {
   ++au_repeater_idx;
   au_GetAndDisplayFormDescription();
 });
 
 function au_GetAndDisplayFormDescription()  {
-  /* Fetching body-part, positive/negative choice made from the 'client aura form
-   */
+  // Fetching body-part, positive/negative choice made from the 'client aura form
 	jQuery('#' + au_id_prefix + au_body_part + '-1-' + au_repeater_idx).on('change', function() {
     g_bodypart = jQuery(this).val();
 		// alert("bodypart: " + g_bodypart);
@@ -54,7 +53,7 @@ function au_GetAndDisplayFormDescription()  {
     var negcolor = jQuery(this).val();
     var descr = g_aura_body_part[g_bodypart]['neg_color'][negcolor]; // 'neg_color' may not always be present.
 
-    alert ('description: ' + descr);
+    // alert ('description: ' + descr);
     descr = au_AddDescription(descr, g_bodypart, negcolor);
     // Putting description into form box
     jQuery('#' + au_id_prefix + au_neg_descr + '-1-' + au_repeater_idx ).val(descr);
@@ -63,7 +62,8 @@ function au_GetAndDisplayFormDescription()  {
 
 
 function au_AddDescription (descr, bodypart, color)  {
-  var dprefix =  bodypart + ", " + color + ": ";
+  // var dprefix =  bodypart + ", " + color + ": ";
+  var dprefix =  "AuraDescription: "; // Here only to isolate description for testing.
 
   if (descr == null)  {
     return (dprefix + au_defaultDescription);
