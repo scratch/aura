@@ -54,6 +54,8 @@ $form = RGFormsModel::get_form_meta($form_id);
 			 * 		 
 			 */				 					
 							
+        $au_form_body_details = array();
+        $au_form_body_details = $form_data['field'][12];
 			?>            
           
       <img src="<?php $au_upload_dir = wp_upload_dir(); echo $au_upload_dir['baseurl'] ; ?>/aura-reader-header.jpg" align="center"/>           
