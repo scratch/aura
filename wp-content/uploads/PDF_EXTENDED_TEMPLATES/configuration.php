@@ -33,14 +33,7 @@
   	'form_id' => 1, 
     'notifications' => true,
   );*/
-  /* -- nk. */
-  $gf_pdf_config[] = array(
-    'form_id' => 1, 
-		'template' => 'aura-template.php',
-		'default-show-empty'  => 'true',
-		'default-show-html' => 'true',
-  );
-  
+
  /*
   * ------------------------------------------------------------ 
   * Default template specific configuration code
@@ -142,6 +135,24 @@
   	'filename' => 'User {Name:1}.pdf', 
   );*/ 
  
+
+  /* -- nk.
+   * For full aura details
+  $gf_pdf_config[] = array(
+    'form_id' => 1, 
+		'template' => 'aura-template.php',
+		'default-show-empty'  => 'true',
+		'default-show-html' => 'true',
+  );
+  */ 
+
+ /* -- nk.
+  */
+  $gf_pdf_config[] = array(
+    'form_id' => 3, 
+		'template' => 'aura_client_details.php',
+    'notification' => 'false',
+  );
  /*
   * ------------------------------------------------------------
   * Custom PDF Size / Orientation
