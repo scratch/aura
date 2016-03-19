@@ -3,6 +3,19 @@
  * Twenty Sixteen functions and definitions
  */
  
+
+/* redirect user to front page after login
+ */
+function redirect_to_front_page() {
+  global $redirect_to;
+
+  if (!isset($_GET['redirect_to'])) {
+	$redirect_to = get_option('siteurl');
+  }
+}
+add_action('login_form', 'redirect_to_front_page');
+
+
 function aura_enqueue_style()  {
 	wp_enqueue_style('twentysixteenstyle', get_template_directory_uri() . '/style.css', false);
 }
