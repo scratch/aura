@@ -14,9 +14,10 @@ Use it to make something cool, have fun, and share what you've learned with othe
 
 /* logout link CSS */
 ul.headerlinks{
-	float:right;
-	position:absolute;
-	right:10vw;
-	top: 25px;
+    list-style: none;
+    float:right;
+    position:absolute;
+    right:10vw;
+    top: 25px;
 }
 
